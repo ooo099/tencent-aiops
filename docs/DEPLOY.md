@@ -36,17 +36,17 @@ curl -s "localhost:8081/api/v1/query?metric=orders_qps" | python3 -c "import jso
 
 ## 三、Kubernetes
 
-镜像先构建好（或用 Docker Hub 上的 `ooo099/aiosight:latest`）：
+镜像先构建好（或用 GHCR 上的 `ghcr.io/ooo099/tencent-aiops:latest`）：
 
 ```bash
-docker build -f deploy/Dockerfile -t ooo099/aiosight:latest .
+docker build -f deploy/Dockerfile -t ghcr.io/ooo099/tencent-aiops:latest .
 ```
 
 ### 用 kind 本地验证
 
 ```bash
 kind create cluster --name aiosight
-kind load docker-image ooo099/aiosight:latest --name aiosight
+kind load docker-image ghcr.io/ooo099/tencent-aiops:latest --name aiosight
 kubectl apply -f deploy/k8s/all.yaml
 kubectl -n aiosight get pods,svc,hpa
 ```
@@ -82,27 +82,33 @@ kubectl -n aiosight run load --rm -it --image=busybox -- sh -c \
 ## 四、滚动更新与容灾
 
 ```bash
-kubectl -n aiosight set image statefulset/aiosight aiosight=ooo099/aiosight:v0.2.0
+kubectl -n aiosight set image statefulset/aiosight aiosight=ghcr.io/ooo099/tencent-aiops:v0.2.0
 kubectl -n aiosight rollout status statefulset/aiosight
 ```
 
 - StatefulSet 默认**逆序**更新，配合 `PodDisruptionBudget(minAvailable=2)`，任意时刻至少 2 个分片在线；
 - 但注意：Pod 重启会丢失该分片的内存数据（已知限制，见 `docs/ARCHITECTURE.md`）。
 
-## 五、镜像发布
+## 五、镜像发布（GHCR）
 
-打 tag 自动触发 GitHub Actions 构建多架构镜像并推送 Docker Hub：
+打 tag 自动触发 GitHub Actions，构建 **amd64 + arm64** 多架构镜像并推送到 GitHub Container Registry：
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-需要先在仓库 Secrets 配置：
+- 镜像地址：`ghcr.io/ooo099/tencent-aiops:v0.1.0`（同时打 `latest`）
+- **不需要额外账号或 Secret**：工作流使用仓库内置的 `GITHUB_TOKEN`（权限 `packages: write`）
+- 同时会把三个平台的二进制上传到 GitHub Release
 
-| Secret | 内容 |
-|---|---|
-| `DOCKERHUB_USERNAME` | Docker Hub 用户名 |
-| `DOCKERHUB_TOKEN` | Docker Hub Access Token（不是密码） |
+> **国内网络提示**：Docker Hub（hub.docker.com）在部分网络下不可达，GHCR 从 GitHub 拉取、构建、推送全程发生在云端，不受本地网络影响。
+> 拉取镜像时如果 `ghcr.io` 慢，可以配置镜像加速或直接在本地 `docker build`。
+
+### 把镜像设为公开（一次性）
+
+GHCR 的包默认是私有的，需要手动改为公开，别人才能 `docker pull`：
+
+GitHub → 个人头像 → Your packages → `tencent-aiops` → Package settings → Change visibility → **Public**
 
 ## 六、可观测性
 

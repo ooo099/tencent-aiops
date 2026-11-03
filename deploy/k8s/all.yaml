@@ -50,7 +50,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
         - name: aiosight
-          image: ooo099/aiosight:latest
+          image: ghcr.io/ooo099/tencent-aiops:latest
           imagePullPolicy: IfNotPresent
           args: ["-addr=:8080"]
           envFrom:
@@ -118,7 +118,7 @@ spec:
     spec:
       containers:
         - name: router
-          image: ooo099/aiosight:latest
+          image: ghcr.io/ooo099/tencent-aiops:latest
           imagePullPolicy: IfNotPresent
           command: ["/router"]
           args:

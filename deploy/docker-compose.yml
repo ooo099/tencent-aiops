@@ -1,6 +1,7 @@
 services:
   # 三个无共享状态的实例，各自持有一部分指标分片
   aiosight-1: &aiosight
+    image: ghcr.io/ooo099/tencent-aiops:local
     build:
       context: ..
       dockerfile: deploy/Dockerfile
@@ -29,6 +30,7 @@ services:
 
   # 分片网关：按指标名做一致性哈希，保证同一指标落到同一实例
   router:
+    image: ghcr.io/ooo099/tencent-aiops:local
     build:
       context: ..
       dockerfile: deploy/Dockerfile
