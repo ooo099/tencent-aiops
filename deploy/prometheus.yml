@@ -4,4 +4,16 @@ global:
 scrape_configs:
   - job_name: aiosight
     static_configs:
-      - targets: ["aiosight:8080"]
+      - targets: ["aiosight-1:8080"]
+        labels:
+          instance: "1"
+      - targets: ["aiosight-2:8080"]
+        labels:
+          instance: "2"
+      - targets: ["aiosight-3:8080"]
+        labels:
+          instance: "3"
+
+  - job_name: aiosight-router
+    static_configs:
+      - targets: ["router:8081"]

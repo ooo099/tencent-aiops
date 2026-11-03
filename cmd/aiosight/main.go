@@ -77,6 +77,7 @@ func main() {
 	}
 
 	log.Info("aiosight 已启动",
+		"instance", cfg.InstanceID,
 		"http", cfg.HTTPAddr,
 		"tcp", cfg.TCPAddr,
 		"udp", cfg.UDPAddr,

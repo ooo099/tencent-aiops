@@ -15,6 +15,7 @@ type Config struct {
 	ShutdownWait time.Duration // 优雅退出等待时间
 	RateLimit    float64       // 每个 IP 每秒允许的请求数
 	RateBurst    int           // 允许的突发量
+	InstanceID   string        // 实例标识，多实例部署时用于日志与排查
 
 	LLM LLMConfig
 }
@@ -30,6 +31,7 @@ type LLMConfig struct {
 
 // Load 读取环境变量并填充默认值。
 func Load() Config {
+	host, _ := os.Hostname()
 	return Config{
 		HTTPAddr:     env("AIOSIGHT_HTTP_ADDR", ":8080"),
 		TCPAddr:      env("AIOSIGHT_TCP_ADDR", ":9000"),
@@ -37,6 +39,7 @@ func Load() Config {
 		ShutdownWait: envDuration("AIOSIGHT_SHUTDOWN_WAIT", 10*time.Second),
 		RateLimit:    envFloat("AIOSIGHT_RATE_LIMIT", 200),
 		RateBurst:    envInt("AIOSIGHT_RATE_BURST", 400),
+		InstanceID:   env("AIOSIGHT_INSTANCE_ID", host),
 		LLM: LLMConfig{
 			Endpoint:  env("AIOSIGHT_LLM_ENDPOINT", ""),
 			APIKey:    env("AIOSIGHT_LLM_API_KEY", ""),

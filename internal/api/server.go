@@ -98,7 +98,7 @@ func (s *Server) alertsSnapshot(limit int) []alert.Alert {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "instance": s.cfg.InstanceID})
 }
 
 func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request) {
@@ -231,6 +231,7 @@ func (s *Server) handleStats(w http.ResponseWriter, _ *http.Request) {
 		"alerts":      len(s.alertsSnapshot(0)),
 		"rate_limit":  s.cfg.RateLimit,
 		"listen_http": s.cfg.HTTPAddr,
+		"instance":    s.cfg.InstanceID,
 	})
 }
 

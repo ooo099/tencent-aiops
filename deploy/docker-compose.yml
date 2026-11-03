@@ -1,18 +1,45 @@
 services:
-  aiosight:
+  # 三个无共享状态的实例，各自持有一部分指标分片
+  aiosight-1: &aiosight
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    ports:
-      - "8080:8080"
-      - "9000:9000"
-      - "9001:9001/udp"
-    environment:
+    environment: &env
+      AIOSIGHT_INSTANCE_ID: "1"
+      AIOSIGHT_RATE_LIMIT: "100000"
+      AIOSIGHT_RATE_BURST: "100000"
       AIOSIGHT_DEMO: "1"
-      # 配置下面两项即可接入真实大模型（任意 OpenAI 兼容接口）
+      # 接入真实大模型时打开（任意 OpenAI 兼容接口）
       # AIOSIGHT_LLM_ENDPOINT: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
       # AIOSIGHT_LLM_API_KEY: "your-key"
       # AIOSIGHT_LLM_MODEL: "glm-4-flash"
+    restart: unless-stopped
+
+  aiosight-2:
+    <<: *aiosight
+    environment:
+      <<: *env
+      AIOSIGHT_INSTANCE_ID: "2"
+
+  aiosight-3:
+    <<: *aiosight
+    environment:
+      <<: *env
+      AIOSIGHT_INSTANCE_ID: "3"
+
+  # 分片网关：按指标名做一致性哈希，保证同一指标落到同一实例
+  router:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    entrypoint: ["/router"]
+    command: ["-addr=:8081", "-backends=http://aiosight-1:8080,http://aiosight-2:8080,http://aiosight-3:8080"]
+    ports:
+      - "8081:8081"
+    depends_on:
+      - aiosight-1
+      - aiosight-2
+      - aiosight-3
     restart: unless-stopped
 
   prometheus:
@@ -22,7 +49,9 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
-      - aiosight
+      - aiosight-1
+      - aiosight-2
+      - aiosight-3
 
   grafana:
     image: grafana/grafana:11.2.0
