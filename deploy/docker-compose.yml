@@ -1,0 +1,34 @@
+services:
+  aiosight:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+      - "9001:9001/udp"
+    environment:
+      AIOSIGHT_DEMO: "1"
+      # 配置下面两项即可接入真实大模型（任意 OpenAI 兼容接口）
+      # AIOSIGHT_LLM_ENDPOINT: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+      # AIOSIGHT_LLM_API_KEY: "your-key"
+      # AIOSIGHT_LLM_MODEL: "glm-4-flash"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - aiosight
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
